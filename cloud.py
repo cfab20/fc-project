@@ -9,7 +9,7 @@ PORT = 5556
 def get_data_from_edge():
     context = zmq.Context()
     socket = context.socket(zmq.SUB)
-    socket.bind("tcp://127.0.0.1:%s" % PORT)
+    socket.bind("tcp://0.0.0.0:%s" % PORT)
 
     socket.subscribe("") # subscribe to all topics
     
