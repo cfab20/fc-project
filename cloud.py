@@ -20,7 +20,7 @@ def write_db(key, data):
     instance = client.instance("tf-instance")
     table = instance.table("sensor_values")
 
-    timestamp = data["timestamp"]
+    timestamp = data["timestamp"].replace(tzinfo=None)
     curr_datatype = None 
     sensor_name = key
 
@@ -122,6 +122,7 @@ def get_data_from_edge():
         data = data.decode()
         
         data = json.loads(data)
+        write_db(topic, data)
         print("TOPIC: {}; DATA: {}".format(topic, data))
         time.sleep(0.001)
 
