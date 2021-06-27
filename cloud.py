@@ -4,6 +4,7 @@ import random
 import sys
 import zmq
 import threading
+import datetime
 
 from google.cloud import bigtable
 from google.cloud.bigtable import column_family
@@ -20,7 +21,8 @@ def write_db(key, data):
     instance = client.instance("tf-instance")
     table = instance.table("sensor_values")
 
-    timestamp = data["timestamp"].replace(tzinfo=None)
+    timestamp = data["timestamp"]
+    gcp_timestamp = datetime.datetime.now()
     curr_datatype = None 
     sensor_name = key
 
@@ -30,33 +32,33 @@ def write_db(key, data):
             break
     sensor_data = data[curr_datatype]
 
-    row_key = sensor_name + "#" + str(timestamp)
+    row_key = sensor_name + "#" + timestamp
     row = table.direct_row(row_key)
     if curr_datatype in ["position", "velocity"]:
         row.set_cell (
             curr_datatype, 
             "x", 
             str(data[curr_datatype]["x"]), 
-            timestamp
+            gcp_timestamp
         )
         row.set_cell (
             curr_datatype, 
             "y", 
             str(data[curr_datatype]["y"]), 
-            timestamp
+            gcp_timestamp
         )
         row.set_cell (
             curr_datatype, 
             "z", 
             str(data[curr_datatype]["z"]), 
-            timestamp
+            gcp_timestamp
         )
     elif curr_datatype in ["temperature"]:
         row.set_cell (
             curr_datatype,
             "temperature",
             str(data[curr_datatype]),
-            timestamp
+            gcp_timestamp
         )
     else:
         print("ERROR")
