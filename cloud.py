@@ -15,56 +15,54 @@ HEARTBEAT_PORT = 5557
 
 SENSOR_DATATYPES = ["position", "velocity", "temperature"]
 
-def write_db(data):
+def write_db(key, data):
     client = bigtable.Client(project="adsp-302713", admin=True)
     instance = client.instance("tf-instance")
     table = instance.table("sensor_values")
 
-    for key, value in data.items():
-        for item in value:
-            timestamp = item["timestamp"]
-            curr_datatype = None 
-            sensor_name = key
+    timestamp = data["timestamp"]
+    curr_datatype = None 
+    sensor_name = key
 
-            for datatype in SENSOR_DATATYPES:
-                if datatype in item:
-                    curr_datatype = datatype
-                    break
-            sensor_data = item[curr_datatype]
+    for datatype in SENSOR_DATATYPES:
+        if datatype in data:
+            curr_datatype = datatype
+            break
+    sensor_data = data[curr_datatype]
 
-            row_key = sensor_name + "#" + str(timestamp)
-            row = table.direct_row(row_key)
-            if curr_datatype in ["position", "velocity"]:
-                row.set_cell (
-                    curr_datatype, 
-                    "x", 
-                    str(item[curr_datatype]["x"]), 
-                    timestamp
-                )
-                row.set_cell (
-                    curr_datatype, 
-                    "y", 
-                    str(item[curr_datatype]["y"]), 
-                    timestamp
-                )
-                row.set_cell (
-                    curr_datatype, 
-                    "z", 
-                    str(item[curr_datatype]["z"]), 
-                    timestamp
-                )
-            elif curr_datatype in ["temperature"]:
-                row.set_cell (
-                    curr_datatype,
-                    "temperature",
-                    str(item[curr_datatype]),
-                    timestamp
-                )
-            else:
-                print("ERROR")
+    row_key = sensor_name + "#" + str(timestamp)
+    row = table.direct_row(row_key)
+    if curr_datatype in ["position", "velocity"]:
+        row.set_cell (
+            curr_datatype, 
+            "x", 
+            str(data[curr_datatype]["x"]), 
+            timestamp
+        )
+        row.set_cell (
+            curr_datatype, 
+            "y", 
+            str(data[curr_datatype]["y"]), 
+            timestamp
+        )
+        row.set_cell (
+            curr_datatype, 
+            "z", 
+            str(data[curr_datatype]["z"]), 
+            timestamp
+        )
+    elif curr_datatype in ["temperature"]:
+        row.set_cell (
+            curr_datatype,
+            "temperature",
+            str(data[curr_datatype]),
+            timestamp
+        )
+    else:
+        print("ERROR")
 
-            row.commit()
-            print('Successfully wrote row {}.'.format(row_key))
+    row.commit()
+    print('Successfully wrote row {}.'.format(row_key))
 
 def read_prefix(project_id, instance_id, table_id, prefix):
     client = bigtable.Client(project=project_id, admin=True)
