@@ -18,7 +18,7 @@ def get_data(schema):
     data = {}
     for data_type in schema.split(","):
         if data_type == "timestamp":
-            data["timestamp"] = datetime.datetime.now()
+            data["timestamp"] = str(datetime.datetime.now())
         elif data_type == "temperature":
             data["temperature"] = random.randrange(-200, 400)
         elif data_type == "position":
