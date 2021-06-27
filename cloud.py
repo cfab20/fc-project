@@ -20,7 +20,7 @@ def write_db(data):
     instance = client.instance("tf-instance")
     table = instance.table("sensor_values")
 
-    for key, value data.items():
+    for key, value in data.items():
         for item in value:
             timestamp = item["timestamp"]
             curr_datatype = None 
@@ -97,8 +97,6 @@ def print_row(row):
     print("")
 
 
-
-
 def check_heartbeat():
     while True:
         context = zmq.Context()
@@ -116,7 +114,7 @@ def check_heartbeat():
 def get_data_from_edge():
     context = zmq.Context()
     socket = context.socket(zmq.SUB)
-    socket.bind("tcp://127.0.0.1:%s" % PORT)
+    socket.bind("tcp://*:%s" % PORT)
 
     socket.subscribe("") # subscribe to all topics
     

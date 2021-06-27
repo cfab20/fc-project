@@ -10,6 +10,7 @@ import os
 DEVICES_PORT = 5555
 CLOUD_PORT = 5556
 CLOUD_HEARTBEAT_PORT = 5557
+CLOUD_IP = "localhost"
 
 
 class Edge:
@@ -42,7 +43,7 @@ class Edge:
     def get_device_data(self):
         context = zmq.Context()
         socket = context.socket(zmq.SUB)
-        socket.bind("tcp://127.0.0.1:%s" % DEVICES_PORT)
+        socket.bind("tcp://*:%s" % DEVICES_PORT)
 
         socket.subscribe("") # subscribe to all topics
 
@@ -82,7 +83,7 @@ class Edge:
         time_out = 1000  # ms
         context2 = zmq.Context()
         socket2 = context2.socket(zmq.REQ)
-        socket2.connect("tcp://127.0.0.1:%s" % CLOUD_HEARTBEAT_PORT)
+        socket2.connect("tcp://" + CLOUD_IP + ":%s" % CLOUD_HEARTBEAT_PORT)
         socket2.setsockopt(zmq.LINGER, 0)
         socket2.setsockopt(zmq.RCVTIMEO, time_out)
         res = False
@@ -100,7 +101,7 @@ class Edge:
     def send_data_to_cloud(self):
         context = zmq.Context()
         socket = context.socket(zmq.PUB)
-        socket.connect("tcp://127.0.0.1:%s" % CLOUD_PORT)
+        socket.connect("tcp://" + CLOUD_IP + ":%s" % CLOUD_PORT)
 
         while True:
             while self.sending_to_cloud:                  
