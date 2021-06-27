@@ -9,13 +9,13 @@ resource "random_id" "id" {
 }
 
 
-resource "google_compute_instance" "vm_instance" {
+resource "google_compute_instance" "fog_instance" {
   name         = "cloud-server"
-  machine_type = "f1-micro"
+  machine_type = "n2-standard-2"
 
   boot_disk {
     initialize_params {
-      image = "debian-cloud/debian-9"
+      image = "debian-cloud/debian-10"
     }
   }
 
@@ -28,13 +28,8 @@ resource "google_compute_instance" "vm_instance" {
   metadata = {
     ssh-keys = "fogcomputing:${file("~/.ssh/id_rsa.pub")}"
   }
-   provisioner "remote-exec" {
-    inline = [
-      "sudo apt install python3-pip -y",
-      "pip3 install pyzmq",
-    ]
-  }
 }
+
 
 resource "google_compute_network" "vpc_network" {
   name                    = "cloud-network"
@@ -44,23 +39,38 @@ resource "google_compute_network" "vpc_network" {
 #            Database
 #################################################################
 
-resource "google_sql_database" "database" {
-  name     = "cloud-database"
-  instance = google_sql_database_instance.instance.name
-}
+resource "google_bigtable_instance" "production-instance" {
+  name = "tf-instance"
+  deletion_protection=false
+  cluster {
+    cluster_id   = "tf-instance-cluster"
+    num_nodes    = 1
+    storage_type = "HDD"
+  }
 
-resource "google_sql_database_instance" "instance" {
-  name   = "cloud-database-instance"
-  region = "europe-west3"
-  database_version = "POSTGRES_11"
-  deletion_protection = false
-  settings {
-    tier = "db-f1-micro"
-    ip_configuration {
-      ipv4_enabled    = true
-    }
+  labels = {
+    my-label = "prod-label"
   }
 }
+
+
+#resource "google_sql_database" "database" {
+#  name     = "cloud-database"
+#  instance = google_sql_database_instance.instance.name
+#}
+
+#resource "google_sql_database_instance" "instance" {
+#  name   = "cloud-database-instance"
+#  region = "europe-west3"
+#  database_version = "POSTGRES_11"
+#  deletion_protection = false
+#  settings {
+#    tier = "db-f1-micro"
+#    ip_configuration {
+#      ipv4_enabled    = true
+#    }
+#  }
+#}
 
 
 #################################################################
@@ -95,6 +105,17 @@ resource "google_compute_firewall" "allow_zmq" {
   allow {
     protocol = "tcp"
     ports = ["5556"]
+  }
+  source_ranges = ["0.0.0.0/0"]
+}
+
+resource "google_compute_firewall" "allow_zmq_heartbeat" {
+  name = "cloud-network-internal-allow-zmq-heartbeat${random_id.id.hex}"
+  network = google_compute_network.vpc_network.self_link
+
+  allow {
+    protocol = "tcp"
+    ports = ["5557"]
   }
   source_ranges = ["0.0.0.0/0"]
 }
