@@ -27,7 +27,9 @@ def send_to_edge():
         except zmq.error.ZMQError:
             pass
         topic = socket.recv() 
-        data = str(get_avg_by_key(topic))
+        print("Got topic request from edge")
+        data = str(get_avg_by_key(topic.decode()))
+        print("Send average of " + data + " to edge")
         socket.send(data.encode())
         socket.close()
 
@@ -39,8 +41,7 @@ def write_db(key, data):
     if not table.exists():
         table.create()
 
-        max_age_rule = column_family.MaxAgeGCRule(datetime.timedelta(days=5))
-        
+        max_age_rule = column_family.MaxAgeGCRule(timedelta(days=5))
         column_family_position = table.column_family('position', max_age_rule)
         column_family_position.create()
 
@@ -165,11 +166,11 @@ def get_avg_by_key(key):
     print("Fetch data from Bigtables for rowkey: " + rowkey)
     
     rows = read_prefix("adsp-302713", "tf-instance", "sensor_values", rowkey)
-
+    
     #print("Reading data for {}:".format(row.row_key.decode('utf-8')))
 
     sum_measurements = 0
-    count = 0
+    count = 1
     for row in rows:
         for cf, cols in sorted(row.cells.items()):
             #print("Column Family {}".format(cf))
@@ -177,7 +178,7 @@ def get_avg_by_key(key):
                 for cell in cells:
                     sum_measurements += int(cell.value)
                     count += 1
-
+    print("Calculated over " + str(count) + " entries")
     return sum_measurements / count
 
 
