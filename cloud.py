@@ -133,7 +133,7 @@ def get_data_from_edge():
     socket.bind("tcp://*:%s" % PORT)
 
     socket.subscribe("") # subscribe to all topics
-    
+    counter = 0
     while True:
         topic, data = socket.recv_multipart()
         topic = topic.decode()
@@ -143,7 +143,9 @@ def get_data_from_edge():
         write_db(topic, data)
         print("TOPIC: {}; DATA: {}".format(topic, data))
         time.sleep(0.001)
-        calculate_avg_with_db_data()
+        counter += 1
+        if(counter % 100 == 0):
+            calculate_avg_with_db_data()
 
 def calculate_avg_with_db_data():
     timestamp_now = str(datetime.now() + timedelta(hours=2))
