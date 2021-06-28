@@ -41,3 +41,8 @@ Now there are a few things to do on the cloud vm that have to be done manually.
 The Emulator will generate multiple fake sensor data per minute (can be configured in the `device_connections.json`) that will be send via a local pub/sub ZeroMQ connection to the Edge component. 
 The Edge component listen to the specific device topics and receives them by establishing a ZeroMQ sub connection. 
 To check the availability of the Cloud component a heartbeat mechanism is implemented. It uses ZeroMQ in Request/Reply mode to achieve this. When the heartbeat fails, the sensor data are written to a temporary file (`cached_data.txt`) to cache them. When the heartbeat checks starts to be successfull, the chached data is send to the Cloud component as well as the currently received sensor data. For this a ZeroMQ Pub/Sub connection is used. The Edge publishes the device toppics with the different sensor sets. The Cloud subscribes to the device toppics and continously reads them. When new sensor data is available, the Cloud component consumes them and commit the data to the Bigtable database. Preiodically, the Cloud component will fetch the sensor data from a specific device that where added during the current hour and calcuate the average over them, which is then send back to the Edge component.
+
+# Teardown
+Simply run `terraform destroy` in the repository directory. 
+
+As Bigtable is extremely expensive, the infrastructure should not run longer then needed.
