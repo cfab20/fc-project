@@ -17,7 +17,7 @@ HEARTBEAT_PORT = 5557
 SEND_TO_EDGE_PORT = 5558
 EDGE_IP = "localhost"
 
-TOPICS = ["laser_cutting", "laser_shaping", "production_line", "robot_1", "robot_2", "robot_3"]
+TOPICS = ["laser_cutting", "laser_shaping"]
 SENSOR_DATATYPES = ["position", "velocity", "temperature"]
 
 def send_to_edge():
