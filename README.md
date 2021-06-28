@@ -17,7 +17,7 @@ Periodically, the Cloud is asked by the Edge component to fetch historical senso
 
 To establish a connection for getting the historical data the Edge component periodically connects to the cloud in a request / reply fashion. This is used to handle multiple Edge components, as well as mitigate the need to create firewall rules on the Edge components network. 
 
-If the Edge component fails, temporarily no sensor data can be processed, but the cloud remains available. As soon as the Edge is available again, the sensors automaitcally reconnect to the edge and automaitcally the edge reconnects to the cloud.
+If the Edge component fails, temporarily no sensor data can be processed, but the cloud remains available. As soon as the Edge is available again, it receives sensor data and automatically reconnects to the cloud.
 
 Each connection is running in a seperate thread so they are independent and they are able to exchange data in real-time.
 
