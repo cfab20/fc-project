@@ -21,6 +21,21 @@ def write_db(key, data):
     instance = client.instance("tf-instance")
     table = instance.table("sensor_values")
 
+
+    if not table.exists():
+        table.create()
+
+        max_age_rule = column_family.MaxAgeGCRule(datetime.timedelta(days=5))
+        
+        column_family_position = table.column_family('position', max_age_rule)
+        column_family_position.create()
+
+        column_family_velocity = table.column_family('velocity', max_age_rule)
+        column_family_velocity.create()
+
+        column_family_temperature = table.column_family('temperature', max_age_rule)
+        column_family_temperature.create()
+
     timestamp = data["timestamp"]
     gcp_timestamp = datetime.datetime.now()
     curr_datatype = None 
