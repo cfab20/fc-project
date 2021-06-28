@@ -7,8 +7,29 @@ The Cloud component runs in a Virtual Machine hosted on the Google Cloud Plattfo
 
 <div>Icons made by <a href="https://www.flaticon.com/authors/smashicons" title="Smashicons">Smashicons</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div>
 
+# Architecture
+
+The Emulator simulates sensor data and can be configured here `device_connections.json`. The sensor data is send via a local pub/sub ZeroMQ connection to the Edge component. The Edge component receives the data by listening to the specific device topics. It batches the data five seconds long and then tries to send it to the cloud.
+
+To check the availability of the Cloud component a heartbeat mechanism is implemented. It uses ZeroMQ in Request/Reply mode. When the heartbeat fails, the batched sensor data is written to a temporary file (`cached_data.txt`) to cache them. When the heartbeat to the cloud is successfull, the cached data is send to the Cloud component along with the received realtime sensor data, so no data is lost. For this a ZeroMQ Pub/Sub connection is used. The Edge publishes the device topics with the sensor measurement data. The Cloud subscribes to the device topics and continously reads them. When new sensor data is available, the Cloud component consumes them and commit the data to the Bigtable database. 
+
+Periodically, the Cloud is asked by the Edge component to fetch historical sensor data from a specific device. To achieve this the Cloud component reads the sensor data from BigTable. On this data we calculate the average measurement sensor data, which is then send back to the Edge component. Due to the key value store of BigTable the read requests do not slow down our Application.
+
+To establish a connection for getting the historical data the Edge component periodically connects to the cloud in a request / reply fashion. This is used to handle multiple Edge components, as well as mitigate the need to create firewall rules on the Edge components network. 
+
+If the Edge component fails, temporarily no sensor data can be processed, but the cloud remains available. As soon as the Edge is available again, the sensors automaitcally reconnect to the edge and automaitcally the edge reconnects to the cloud.
+
+Each connection is running in a seperate thread so they are independent and they are able to exchange data in real-time.
+
 # Deploy Infrastructure
 The Cloud-side infrastructure is created with means of Infrastructure as Code (IaC) with the help of Terraform. During the creation and connection the key `~/.ssh/id_rsa` will be used as the ssh key. All needed dependencies and packages are automatically installed on the cloud machine during the creation.
+
+The following infrastructure components are deployed by using Terraform: 
+- Virtual Machine
+- Network Configuration
+- Firewall Configuration
+- Programming Dependecies
+- BigTable Database
 
 ## Prerequisitions on the local machine
 
@@ -36,11 +57,6 @@ Now there are a few things to do on the cloud vm that have to be done manually.
 3. run the sensor emulator with `python3 device_emulator.py`
 4. change the public ip address in the edge.py file to the public ip of the cloud server 
 5. run the edge component with `python3 edge.py` 
-
-# What will happen?
-The Emulator will generate multiple fake sensor data per minute (can be configured in the `device_connections.json`) that will be send via a local pub/sub ZeroMQ connection to the Edge component. 
-The Edge component listen to the specific device topics and receives them by establishing a ZeroMQ sub connection. 
-To check the availability of the Cloud component a heartbeat mechanism is implemented. It uses ZeroMQ in Request/Reply mode to achieve this. When the heartbeat fails, the sensor data are written to a temporary file (`cached_data.txt`) to cache them. When the heartbeat checks starts to be successfull, the chached data is send to the Cloud component as well as the currently received sensor data. For this a ZeroMQ Pub/Sub connection is used. The Edge publishes the device toppics with the different sensor sets. The Cloud subscribes to the device toppics and continously reads them. When new sensor data is available, the Cloud component consumes them and commit the data to the Bigtable database. Preiodically, the Cloud component will fetch the sensor data from a specific device that where added during the current hour and calcuate the average over them, which is then send back to the Edge component.
 
 # Teardown
 Simply run `terraform destroy` in the repository directory. 
