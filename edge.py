@@ -10,6 +10,8 @@ import os
 DEVICES_PORT = 5555
 CLOUD_PORT = 5556
 CLOUD_HEARTBEAT_PORT = 5557
+DATA_FROM_CLOUD_PORT = 5558
+
 CLOUD_IP = "localhost"
 
 
@@ -116,16 +118,29 @@ class Edge:
                 self.sending_to_cloud = False
             time.sleep(0.001)
     
-    def run(self):
-#        th_from_devices = threading.Thread(target=self.get_device_data)
-        th_to_cloud = threading.Thread(target=self.send_data_to_cloud)
+    def get_data_from_cloud():
+        context = zmq.Context()
+        socket = context.socket(zmq.SUB)
+        socket.bind("tcp://*:%s" % DATA_FROM_CLOUD_PORT)
 
- #       th_from_devices.start()
+        socket.subscribe("") # subscribe to all topics
+        while True:
+            topic, data = socket.recv_multipart()
+            topic = topic.decode()
+            data = data.decode()        
+            print("Got avg data from cloud")
+            
+    def run(self):
+        th_from_devices = threading.Thread(target=self.get_device_data)
+        th_to_cloud = threading.Thread(target=self.send_data_to_cloud)
+        th_from_cloud = threading.Thread(target=self.get_data_from_cloud)
+
+        th_from_devices.start()
         th_to_cloud.start()
+        th_from_cloud.start()
 
 edge = Edge()
 edge.run()
-edge.get_device_data()
-# edge.check_heartbeat()
+# edge.get_device_data()
 
     
