@@ -1,5 +1,5 @@
 output "cloud-server-public-ip" {
-  value = google_compute_instance.fog_instance.network_interface.0.access_config.0.nat_ip
+  value = google_compute_instance.cloud_instance.network_interface.0.access_config.0.nat_ip
 }
 
 
