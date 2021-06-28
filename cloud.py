@@ -4,7 +4,8 @@ import random
 import sys
 import zmq
 import threading
-import datetime
+
+from datetime import datetime, timedelta
 
 from google.cloud import bigtable
 from google.cloud.bigtable import column_family
@@ -21,8 +22,23 @@ def write_db(key, data):
     instance = client.instance("tf-instance")
     table = instance.table("sensor_values")
 
+
+    if not table.exists():
+        table.create()
+
+        max_age_rule = column_family.MaxAgeGCRule(datetime.timedelta(days=5))
+        
+        column_family_position = table.column_family('position', max_age_rule)
+        column_family_position.create()
+
+        column_family_velocity = table.column_family('velocity', max_age_rule)
+        column_family_velocity.create()
+
+        column_family_temperature = table.column_family('temperature', max_age_rule)
+        column_family_temperature.create()
+
     timestamp = data["timestamp"]
-    gcp_timestamp = datetime.datetime.now()
+    gcp_timestamp = datetime.now()
     curr_datatype = None 
     sensor_name = key
 
@@ -77,9 +93,9 @@ def read_prefix(project_id, instance_id, table_id, prefix):
     row_set.add_row_range_from_keys(prefix.encode("utf-8"), end_key.encode("utf-8"))
 
     rows = table.read_rows(row_set=row_set)
-    for row in rows:
-        print_row(row)
-
+#    for row in rows:
+#        print_row(row)
+    return rows
 
 def print_row(row):
     print("Reading data for {}:".format(row.row_key.decode('utf-8')))
@@ -108,7 +124,7 @@ def check_heartbeat():
         data = socket.recv() 
         socket.send("general kenobi".encode())
         socket.close()
-        time.sleep(0.001)
+#        time.sleep(0.001)
         
 
 def get_data_from_edge():
@@ -127,6 +143,28 @@ def get_data_from_edge():
         write_db(topic, data)
         print("TOPIC: {}; DATA: {}".format(topic, data))
         time.sleep(0.001)
+        calculate_avg_with_db_data()
+
+def calculate_avg_with_db_data():
+    timestamp_now = str(datetime.now() + timedelta(hours=2))
+    rowkey_date_hour_now = timestamp_now[0:14]
+    rowkey = "laser_cutting#"+rowkey_date_hour_now
+    print("Fetch data from Bigtables for rowkey: " + rowkey)
+    rows = read_prefix("adsp-302713", "tf-instance", "sensor_values", rowkey)
+
+    #print("Reading data for {}:".format(row.row_key.decode('utf-8')))
+
+    sum_measurements = 0
+    count = 0
+    for row in rows:
+        for cf, cols in sorted(row.cells.items()):
+            #print("Column Family {}".format(cf))
+            for col, cells in sorted(cols.items()):
+                for cell in cells:
+                    sum_measurements += int(cell.value)
+                    count+=1
+    print("Average laser_cutting temperature of the current hour was: " + str(sum_measurements/count))
+
 
 
 heartbeat = threading.Thread(target=check_heartbeat)
