@@ -163,7 +163,7 @@ def calculate_avg_with_db_data():
                 for cell in cells:
                     sum_measurements += int(cell.value)
                     count+=1
-    print("Average of the current hour was: " + str(sum_measurements/count))
+    print("Average laser_cutting temperature of the current hour was: " + str(sum_measurements/count))
 
 
 
