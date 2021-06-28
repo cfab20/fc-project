@@ -2,32 +2,32 @@
     "devices": [
         {
             "topic": "laser_cutting",
-            "msgs-per-min": 60,
+            "msgs-per-min": 10,
             "schema": "timestamp,temperature"
         },
         {
             "topic": "laser_shaping",
-            "msgs-per-min": 60,
+            "msgs-per-min": 10,
             "schema": "timestamp,temperature"
         },
         {
             "topic": "production_line",
-            "msgs-per-min": 30,
+            "msgs-per-min": 10,
             "schema": "timestamp,velocity"
         },
         {
             "topic": "robot_1",
-            "msgs-per-min": 60,
+            "msgs-per-min": 10,
             "schema": "timestamp,position"
         },
         {
             "topic": "robot_2",
-            "msgs-per-min": 60,
+            "msgs-per-min": 10,
             "schema": "timestamp,position"
         },
         {
             "topic": "robot_3",
-            "msgs-per-min": 60,
+            "msgs-per-min": 10,
             "schema": "timestamp,position"
         }
     ]
