@@ -29,17 +29,27 @@ resource "google_compute_instance" "cloud_instance" {
     ssh-keys = "fogcomputing:${file("~/.ssh/id_rsa.pub")}"
   }
   
-  local-exec { 
-    interpreter = ["/bin/bash" ,"-c"],
-    command = <<-EOT
-      exec "sudo apt update && sudo apt upgrade -y"
-      exec "sudo apt install git python3-pip python3-zmq apt-transport-https ca-certificates gnupg -y"
-      exec "pip3 install google-cloud-bigtable==2.0.0"
-      exec "echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list"
-      exec "curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key --keyring /usr/share/keyrings/cloud.google.gpg add -"
-      exec "sudo apt-get update && sudo apt-get install google-cloud-sdk"
-      exec "sudo apt-get install google-cloud-sdk-app-engine-java"
-    EOT
+  connection {
+    type  = "ssh"
+    host  = self.network_interface.0.access_config.0.nat_ip
+    user  = "fogcomputing"
+    port  = 22
+#    agent = true
+    private_key = "${file("~/.ssh/id_rsa")}"
+  }
+
+  provisioner "remote-exec" { 
+#    interpreter = ["/bin/bash" ,"-c"]
+    inline = [
+      "sudo apt update && sudo apt upgrade -y",
+      "sudo apt install git python3-pip python3-zmq apt-transport-https ca-certificates gnupg -y",
+      "pip3 install --upgrade pip",
+      "pip3 install google-cloud-bigtable==2.0.0",
+      "echo 'deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main' | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list",
+      "curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key --keyring /usr/share/keyrings/cloud.google.gpg add -",
+      "sudo apt-get update && sudo apt-get install google-cloud-sdk -y",
+      "sudo apt-get install google-cloud-sdk-app-engine-java -y",
+   ]
   }
 }
 
